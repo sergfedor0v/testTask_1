@@ -1,0 +1,8 @@
+/ui_tests/build/
+/api_tests/build/
+out/
+.idea/
+.idea_modules/
+/jet_test_automation_task.iml
+/api-tests/.gradle/
+/ui-tests/.gradle/

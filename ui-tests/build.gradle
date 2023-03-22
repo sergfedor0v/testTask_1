@@ -1,0 +1,100 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'io.qameta.allure' version '2.11.0'
+    id 'pmd'
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+allure {
+    version = '2.19.0'  // Latest Allure Version
+
+    useJUnit5 {
+        version = '2.19.0' // Latest Allure Version
+    }
+
+}
+
+application {
+    mainClass = 'org.sergfedrv.Main'
+}
+
+configurations {
+    testCompile
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'io.qameta.allure:allure-java-commons:2.21.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0'
+    implementation 'org.seleniumhq.selenium:selenium-java:4.8.0'
+    implementation 'io.github.bonigarcia:webdrivermanager:5.3.2'
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.24.2'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.8.0'
+    implementation group: 'io.qameta.allure', name: 'allure-java-commons', version: '2.19.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'io.rest-assured:rest-assured:5.3.0'
+}
+
+def testConfiguration = {
+    systemProperty("CUSTOM_BUILD_DIR", projectDir)
+
+    systemProperties System.getProperties()
+    testLogging {
+        exceptionFormat = 'full'
+        debug {
+            events "started", "skipped", "failed"
+            exceptionFormat "full"
+        }
+        events "passed", "skipped", "failed"
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+    systemProperty('junit.platform.output.capture.stdout', true)
+    systemProperty('junit.platform.output.capture.stderr', true)
+}
+
+def testConfigurationConcurrent = {
+    systemProperty('junit.jupiter.execution.parallel.enabled', true)
+    systemProperty('junit.jupiter.execution.parallel.mode.default', 'concurrent')
+    systemProperty('junit.jupiter.execution.parallel.mode.classes.default', 'concurrent')
+    systemProperty('junit.jupiter.execution.parallel.config.strategy', 'fixed')
+    systemProperty('junit.jupiter.execution.parallel.config.fixed.parallelism', 5)
+}
+
+task uiTests(type: Test) {
+    ignoreFailures = true
+    useJUnitPlatform {
+        includeTags("ui_tests")
+    }
+    configure testConfiguration
+}
+
+task uiTestsParallel(type: Test) {
+    ignoreFailures = true
+    useJUnitPlatform {
+        includeTags("ui_tests")
+    }
+    configure testConfiguration
+    configure testConfigurationConcurrent
+}
+
+test {
+    useJUnitPlatform()
+    options {
+        systemProperties(System.getProperties())
+    }
+}
