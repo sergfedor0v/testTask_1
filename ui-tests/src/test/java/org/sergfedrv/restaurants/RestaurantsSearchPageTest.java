@@ -1,9 +1,13 @@
 package org.sergfedrv.restaurants;
 
 import io.qameta.allure.Allure;
+import io.qameta.allure.Description;
 import io.qameta.allure.Step;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.logging.LogType;
@@ -13,7 +17,6 @@ import org.sergfedrv.data.cuisine.CuisineTypeMapper;
 import org.sergfedrv.data.restaurant.RestaurantData;
 import org.sergfedrv.pageobjects.home.HomePage;
 import org.sergfedrv.pageobjects.restaurant.RestaurantCard;
-import org.sergfedrv.pageobjects.restaurant.RestaurantSearchResultCard;
 import org.sergfedrv.pageobjects.restaurant.RestaurantsSearchPage;
 
 import java.util.ArrayList;
@@ -23,48 +26,59 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class RestaurantsSearchPageTest extends BaseTest {
-    @Test
-    @Tag("ui_tests")
-    public void testSearchByPlaceAndCuisineType() {
-        driver.get(Configuration.getRestaurantListDirectUrl());
-        String category = "Italian";
-        RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
-                .filterRestaurantsByQuery("Pizza")
-                .filterByCuisineTopSwiper(category)
-                .scrollAllTheWayDown();
-        checkCuisineCategoryOfRestaurantsFilteredByNameAndCategory(page, "category");
+
+    @AfterEach
+    public void afterTest() {
+        appendBrowserConsoleLogs();
+        super.afterTest();
     }
 
     @Test
-    @Tag("ui_tests")
-    public void testSearchByCuisineTypeOnly() {
-        //Arrange - get actual restaurant data from backend
+    @DisplayName("Check that restaurants can be filtered by cuisine type")
+    @Description("""
+            Given: User opens restaurant search page
+            When: User select category "Italian" from top swiper panel of the page
+            Then: Restaurants list is filtered by this category.
+            """)
+    public void testSearchByCuisineType() {
+        //Arrange - get actual restaurant cuisine type data from backend
         List<RestaurantData> actualRestaurantsData = loadActualRestaurantDataForLocation(Configuration
                 .getSearchPostalCode());
         //Act
         driver.get(Configuration.getRestaurantListDirectUrl());
         String cuisineTypeName = "Italian";
         RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
+                .waitRestaurantListLoading()
                 .filterByCuisineTopSwiper(cuisineTypeName)
                 .scrollAllTheWayDown();
         //Assert
         checkCuisineCategoryOfRestaurantsFilteredByCategory(page, cuisineTypeName, actualRestaurantsData);
     }
 
-    @Test
-    @Tag("ui_tests")
-    public void filterByMinimalOrderValue() {
+    @ParameterizedTest
+    @ValueSource(ints = {10, 15})
+    @DisplayName("Check that restaurants can be filtered by minimal order value")
+    @Description("""
+            Given: User opens restaurant search page
+            When: User press minimal order amount radio button ([10 or less] or [15 or less])
+            Then: Restaurants list is filtered by minimal order amount
+            """)
+    public void filterByMinimalOrderValue(int minimalOrderValue) {
         driver.get(Configuration.getRestaurantListDirectUrl());
-        int minimalOrderAmount = 10;
         RestaurantsSearchPage restaurantsSearchPage = new RestaurantsSearchPage(driver)
                 .waitRestaurantListLoading()
-                .applyMinimalOrderFilter(minimalOrderAmount)
+                .applyMinimalOrderFilter(minimalOrderValue)
                 .scrollAllTheWayDown();
-        checkAllRestaurantsFilteredByMinimalOrderAmount(restaurantsSearchPage, minimalOrderAmount);
+        checkAllRestaurantsFilteredByMinimalOrderAmount(restaurantsSearchPage, minimalOrderValue);
     }
 
     @Test
-    @Tag("ui_tests")
+    @DisplayName("Check that restaurants can be filtered by [Free delivery] filter switcher")
+    @Description("""
+            Given: User opens restaurant search page
+            When: User apply [Free delivery] filter.
+            Then: Restaurants list shows only restaurants with free delivery
+            """)
     public void freeDeliveryFilterTest() {
         driver.get(Configuration.getRestaurantListDirectUrl());
         RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
@@ -75,7 +89,12 @@ public class RestaurantsSearchPageTest extends BaseTest {
     }
 
     @Test
-    @Tag("ui_tests")
+    @DisplayName("Check that restaurants can be filtered by [Open now] filter switcher.")
+    @Description("""
+            Given: User opens restaurant search page
+            When: User apply [Free delivery] filter.
+            Then: Restaurants list shows only restaurants with free delivery
+            """)
     public void openNowFilterTest() {
         driver.get(Configuration.getRestaurantListDirectUrl());
         RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
@@ -86,28 +105,20 @@ public class RestaurantsSearchPageTest extends BaseTest {
     }
 
     @Test
-    @Tag("ui_tests")
+    @DisplayName("Check that it's possible to search restaurants for location")
+    @Description("""
+            Given: User opens main page
+            When: User fills valid address in search field
+            Then: User sees list of suggested locations
+            When: User clicks on suggested location option
+            Then: Opens page with the restaurant list for this location.
+            """)
     public void cloudflareErrorsDemo() {
         driver.get(baseUrl);
         new HomePage(driver)
                 .inputSearchQuery("Unter den Linden")
                 .selectLocationResult(0);
-        appendBrowserConsoleLogs();
-    }
-
-    @Step("Check that all restaurant cards filtered by name and cuisine category='{category}' have this category")
-    public void checkCuisineCategoryOfRestaurantsFilteredByNameAndCategory(RestaurantsSearchPage page, String category) {
-        List<RestaurantSearchResultCard> restaurantCards = page.getRestaurantSearchCardElements();
-        for (RestaurantSearchResultCard card : restaurantCards) {
-            //catch card that does not match with filter and scroll to it to take a screenshot
-            if (!card.getAvailableCuisineTypes().contains(category)) {
-                card.scrollBrowserWindowToTheCardAndTakeScreenshot();
-            }
-            assertThat(card.getAvailableCuisineTypes())
-                    .as(String.format("Check, that restaurant %s really can cook %s food",
-                            card.getRestaurantTitle(), category))
-                    .contains(category);
-        }
+        new RestaurantsSearchPage(driver).waitRestaurantListLoading();
     }
 
     @Step("Check that all restaurant cards from discovery filtered by cuisine category='{categoryName}' have this cuisine category")

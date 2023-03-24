@@ -78,24 +78,13 @@ def testConfigurationConcurrent = {
 
 task uiTests(type: Test) {
     ignoreFailures = true
-    useJUnitPlatform {
-        includeTags("ui_tests")
-    }
+    useJUnitPlatform()
     configure testConfiguration
 }
 
 task uiTestsParallel(type: Test) {
     ignoreFailures = true
-    useJUnitPlatform {
-        includeTags("ui_tests")
-    }
+    useJUnitPlatform()
     configure testConfiguration
     configure testConfigurationConcurrent
-}
-
-test {
-    useJUnitPlatform()
-    options {
-        systemProperties(System.getProperties())
-    }
 }

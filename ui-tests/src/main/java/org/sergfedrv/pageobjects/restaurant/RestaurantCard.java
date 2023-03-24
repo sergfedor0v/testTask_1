@@ -13,17 +13,18 @@ public class RestaurantCard extends BaseCard {
     private final float minimalOrderAmount;
     private final String restaurantPrimarySlug;
     private final String restaurantTitle;
-    private final boolean isFreeDeliveryAvailable;
+
+    private final String deliveryFeeTextString;
 
     public RestaurantCard(WebDriver driver, WebElement rootElement) {
         super(driver, rootElement);
-        minimalOrderAmount = calculateMinimalOrderAmount();
+        restaurantTitle = getElementBy(By.cssSelector("div>a")).getAttribute("title");
         restaurantPrimarySlug = getElementBy(By.cssSelector("div[data-qa^='restaurant-card-']"))
                 .getAttribute("data-qa")
                 .replaceAll("restaurant-card-", "");
-        restaurantTitle = getElementBy(By.cssSelector("div>a")).getAttribute("title");
-        isFreeDeliveryAvailable = getElementBy(By.cssSelector("div[data-qa='delivery-costs-indicator-content']"))
-                .getText().equals("Free");
+        minimalOrderAmount = calculateMinimalOrderAmount();
+        deliveryFeeTextString = getElementBy(By.cssSelector("div[data-qa='delivery-costs-indicator-content']"))
+                .getText();
     }
 
     public String getRestaurantPrimarySlug() {
@@ -48,6 +49,6 @@ public class RestaurantCard extends BaseCard {
     }
 
     public boolean isFreeDeliveryAvailable() {
-        return isFreeDeliveryAvailable;
+        return deliveryFeeTextString.equals("Free");
     }
 }
