@@ -46,6 +46,7 @@ dependencies {
     implementation group: 'io.qameta.allure', name: 'allure-java-commons', version: '2.19.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'io.rest-assured:rest-assured:5.3.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
 }
 
 def testConfiguration = {
