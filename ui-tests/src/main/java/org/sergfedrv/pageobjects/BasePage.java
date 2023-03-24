@@ -1,14 +1,12 @@
 package org.sergfedrv.pageobjects;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import io.qameta.allure.Allure;
+import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.sergfedrv.utils.ScreenshotHelper;
 
+import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.util.List;
 
@@ -22,12 +20,18 @@ public class BasePage {
         wait = new WebDriverWait(driver, WAIT_DURATION);
     }
 
+    protected void takeScreenshot(String description) {
+        TakesScreenshot screenshot = (TakesScreenshot) driver;
+        Allure.addAttachment(description,
+                new ByteArrayInputStream(screenshot.getScreenshotAs(OutputType.BYTES)));
+    }
+
     protected WebElement waitVisibilityOfElementBy(By by) {
         WebElement element;
         try {
             element = wait.until(ExpectedConditions.visibilityOfElementLocated(by));
         } catch (TimeoutException e) {
-            ScreenshotHelper.takeScreenshot(e.getMessage(), driver);
+            takeScreenshot("Wait for element failed screenshot");
             throw new TimeoutException(e);
         }
         return element;
@@ -38,7 +42,7 @@ public class BasePage {
         try {
             elements = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(by));
         } catch (TimeoutException e) {
-            ScreenshotHelper.takeScreenshot(e.getMessage(), driver);
+            takeScreenshot("Wait for element failed screenshot");
             throw new TimeoutException(e);
         }
         return elements;
@@ -54,7 +58,7 @@ public class BasePage {
         try {
             element = wait.until(ExpectedConditions.elementToBeClickable(by));
         } catch (TimeoutException e) {
-            ScreenshotHelper.takeScreenshot(e.getMessage(), driver);
+            takeScreenshot("Wait for element failed screenshot");
             throw new TimeoutException(e);
         }
         return element;

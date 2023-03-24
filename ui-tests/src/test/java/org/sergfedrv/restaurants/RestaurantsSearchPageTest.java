@@ -65,13 +65,24 @@ public class RestaurantsSearchPageTest extends BaseTest {
 
     @Test
     @Tag("ui_tests")
-    public void filterByFreeDelivery() {
+    public void freeDeliveryFilterTest() {
         driver.get(Configuration.getRestaurantListDirectUrl());
         RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
                 .waitRestaurantListLoading()
                 .applyFreeDeliveryFilter()
                 .scrollAllTheWayDown();
         checkAllRestaurantsFilteredByFreeDelivery(page);
+    }
+
+    @Test
+    @Tag("ui_tests")
+    public void openNowFilterTest() {
+        driver.get(Configuration.getRestaurantListDirectUrl());
+        RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
+                .waitRestaurantListLoading()
+                .applyOpenNowFilter()
+                .scrollAllTheWayDown();
+        checkAllRestaurantsFilteredByOpenNow(page);
     }
 
     @Test
@@ -159,7 +170,20 @@ public class RestaurantsSearchPageTest extends BaseTest {
         }
     }
 
-    @Step("Get actual restaurant data from backend for postal code {postalCode}")
+    @Step("Check, that only opened restaurants are available")
+    private void checkAllRestaurantsFilteredByOpenNow(RestaurantsSearchPage page) {
+        List<RestaurantCard> openedRestaurantCards = page.getOpenedRestaurantCardElements();
+        List<RestaurantCard> openingSoonRestaurantCards = page.getOpeningSoonRestaurantCardElements();
+        List<RestaurantCard> closedRestaurantCards = page.getClosedRestaurantCardElements();
+        assertThat(openedRestaurantCards).as("Check that opened restaurants are displayed")
+                .isNotEmpty();
+        assertThat(openingSoonRestaurantCards).as("Check that opening soon restaurants are not displayed")
+                .isEmpty();
+        assertThat(closedRestaurantCards).as("Check that closed restaurants are not displayed")
+                .isEmpty();
+    }
+
+    @Step("Load actual restaurant data from backend for postal code {postalCode}")
     private List<RestaurantData> loadActualRestaurantDataForLocation(String postalCode) {
         return apiHelper.getRestaurantInfoForLocation(postalCode).getRestaurantDataList();
     }

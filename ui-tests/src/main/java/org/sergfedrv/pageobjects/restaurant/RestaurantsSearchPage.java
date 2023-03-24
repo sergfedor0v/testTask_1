@@ -6,7 +6,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.sergfedrv.pageobjects.BasePage;
-import org.sergfedrv.utils.ScreenshotHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +17,14 @@ public class RestaurantsSearchPage extends BasePage {
     private final By openingSoonRestaurantCardsLocator = By.cssSelector("section[data-qa='restaurant-list-pre-order-" +
             "section'] ul>li");
 
-    private final By closedRestaurantCardsLocator = By.cssSelector("section[data-qa='restaurant-list-open-section']" +
+    private final By closedRestaurantCardsLocator = By.cssSelector("section[data-qa='restaurant-list-closed-section']" +
             " ul>li");
 
     private final By restaurantListHeaderLocator = By.cssSelector("h1[data-qa='restaurant-list-header']");
     private final By minimalOrderFilterShowAllLocator = By.id("radio_0");
     private final By minimalOrderFilterShowTenOrLessLocator = By.id("radio_1");
     private final By minimalOrderFilterShowFifteenOrLessLocator = By.id("radio_2");
-    private final By openedNowSwitcherLocator = By.id("switch_0");
+    private final By openedNowSwitcherLocator = By.cssSelector("div[data-qa='availability-filter-switch']");
     private final By freeDeliveryFilterSwitchLocator = By.cssSelector("div[data-qa='free-delivery-filter-switch']");
     private final By restaurantListSearchInputLocator = By.id("input_5");
     private final By restaurantSearchResultLink = By.cssSelector("div[data-qa='restaurant-search-results']" +
@@ -49,8 +48,9 @@ public class RestaurantsSearchPage extends BasePage {
             }
         }
         if (optionToSelect == null) {
-            ScreenshotHelper.takeScreenshot("Cannot find suitable option from list by name", driver);
-            throw new IllegalArgumentException(String.format("Cannot filter restaurants by cuisine type %s",
+            takeScreenshot("Cannot find suitable option from list by name");
+            throw new IllegalArgumentException(String.format("Cannot filter restaurants by cuisine type %s, no such " +
+                            "option available.",
                     cuisineTypeToSelect));
         }
         optionToSelect.click();
@@ -79,9 +79,15 @@ public class RestaurantsSearchPage extends BasePage {
         return new RestaurantsSearchPage(driver);
     }
 
-    @Step("Apply free delivery filter")
+    @Step("Apply \"Free delivery\" filter")
     public RestaurantsSearchPage applyFreeDeliveryFilter() {
         performClickAction(freeDeliveryFilterSwitchLocator);
+        return new RestaurantsSearchPage(driver);
+    }
+
+    @Step("Apply \"Open now\" filter")
+    public RestaurantsSearchPage applyOpenNowFilter() {
+        performClickAction(openedNowSwitcherLocator);
         return new RestaurantsSearchPage(driver);
     }
 
@@ -118,6 +124,12 @@ public class RestaurantsSearchPage extends BasePage {
 
     public List<RestaurantCard> getOpeningSoonRestaurantCardElements() {
         return getElementsBy(openingSoonRestaurantCardsLocator).stream()
+                .map(element -> new RestaurantCard(driver, element))
+                .collect(Collectors.toList());
+    }
+
+    public List<RestaurantCard> getClosedRestaurantCardElements() {
+        return getElementsBy(closedRestaurantCardsLocator).stream()
                 .map(element -> new RestaurantCard(driver, element))
                 .collect(Collectors.toList());
     }

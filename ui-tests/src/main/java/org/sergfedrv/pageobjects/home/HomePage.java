@@ -5,8 +5,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.sergfedrv.pageobjects.BasePage;
-import org.sergfedrv.pageobjects.restaurant.RestaurantsSearchPage;
-import org.sergfedrv.utils.ScreenshotHelper;
 
 import java.util.List;
 
@@ -30,7 +28,7 @@ public class HomePage extends BasePage {
     public void selectLocationResult(int resultIndex) {
         List<WebElement> results = waitVisibilityOfElementsBy(locationPanelResultListElements);
         if (results.size() < resultIndex) {
-            ScreenshotHelper.takeScreenshot("Not enough options to select from screenshot", driver);
+            takeScreenshot("Not enough options to select from screenshot");
             throw new IndexOutOfBoundsException(String.format("Option index %d out of bounds for length %d",
                     resultIndex, results.size()));
         }
