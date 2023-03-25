@@ -1,5 +1,9 @@
 package org.sergfedrv.client.authentication;
 
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 import org.sergfedrv.config.Configuration;
 
 import static io.restassured.RestAssured.given;
@@ -9,7 +13,6 @@ public class TokenProvider {
     private static TokenProvider instance;
     private final String fullScopeAppToken;
     private final String emptyScopeAppToken;
-    private final String invalidToken = "IAMINVALID";
 
     private TokenProvider() {
         fullScopeAppToken = authenticateApp(Scope.FULL);
@@ -23,22 +26,6 @@ public class TokenProvider {
         return instance;
     }
 
-    private String authenticateApp(Scope scope) {
-        AppCredentials appCredentials = Configuration.getAppCredentials(scope.getValue());
-        return given()
-                .baseUri(Configuration.getBaseUrl())
-                .basePath("token")
-                .formParam("grant_type", "client_credentials")
-                .formParam("client_id", appCredentials.clientId())
-                .formParam("client_secret", appCredentials.clientSecret())
-                .post()
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getString("access_token");
-    }
-
     public String getFullScopeAppToken() {
         return fullScopeAppToken;
     }
@@ -48,6 +35,34 @@ public class TokenProvider {
     }
 
     public String getInvalidToken() {
-        return invalidToken;
+        return "invalidToken";
+    }
+
+    private String authenticateApp(Scope scope) {
+        AppCredentials appCredentials = Configuration.getAppCredentials(scope.getValue());
+        return given()
+                .spec(getRequestLoggerSpec())
+                .baseUri(Configuration.getBaseUrl())
+                .basePath("token")
+                .formParam("grant_type", "client_credentials")
+                .formParam("client_id", appCredentials.clientId())
+                .formParam("client_secret", appCredentials.clientSecret())
+                .post()
+                .then()
+                .spec(getResponseLoggerSpecification())
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getString("access_token");
+    }
+
+    private RequestSpecification getRequestLoggerSpec() {
+        return Configuration.debugModeEnabled() ? given().log().all() : given().log().method().log().uri();
+    }
+
+    private ResponseSpecification getResponseLoggerSpecification() {
+        return Configuration.debugModeEnabled() ?
+                new ResponseSpecBuilder().log(LogDetail.ALL).build() :
+                new ResponseSpecBuilder().log(LogDetail.STATUS).build();
     }
 }

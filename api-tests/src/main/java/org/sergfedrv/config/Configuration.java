@@ -23,4 +23,13 @@ public class Configuration {
         return new AppCredentials(getProperty(String.format("%s.clientId", appScope)),
                 getProperty(String.format("%s.clientSecret", appScope)));
     }
+
+    public static String getUserId() {
+        return getProperty("userId");
+    }
+
+    public static boolean debugModeEnabled() {
+        return Optional.ofNullable(System.getProperty("debugMode"))
+                .isPresent() && System.getProperty("debugMode").equals("enabled");
+    }
 }
