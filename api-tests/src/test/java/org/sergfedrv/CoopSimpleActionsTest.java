@@ -1,11 +1,11 @@
-package org.sergfedrv.barnlock;
+package org.sergfedrv;
 
 import io.qameta.allure.Allure;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.sergfedrv.BaseTest;
 import org.sergfedrv.model.SuccessfulResponse;
 import org.sergfedrv.specifications.ApiAction;
 
@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CoopSimpleActionsTest extends BaseTest {
 
     private static Stream<Arguments> stateChangedDataProvider() {
@@ -56,7 +57,7 @@ public class CoopSimpleActionsTest extends BaseTest {
     public void testCoopActionStateChanged(ApiAction action, SuccessfulResponse expectedResponse) {
         Allure.description(String.format("Check, that we can successfully execute request POST /api/{userId}/%s" +
                 " request and get message \"%s\" in the response body.", action.value, expectedResponse.message()));
-        SuccessfulResponse actualResponse = coopClient.sendActionRequestUntilResponseMessageIs(action,
+        SuccessfulResponse actualResponse = coopClient.sendActionRequestUntilResponseMessageContains(action,
                 expectedResponse.message());
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }

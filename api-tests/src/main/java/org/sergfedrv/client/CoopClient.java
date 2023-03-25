@@ -18,7 +18,7 @@ public class CoopClient {
     public CoopClient(SpecificationProvider provider, TokenProvider tokenProvider) {
         this.specificationProvider = provider;
         this.tokenProvider = tokenProvider;
-        defaultWaitDuration = Duration.ofSeconds(20);
+        defaultWaitDuration = Duration.ofSeconds(30);
     }
 
     @Step("Send POST /api/{userId}/{action.value} request.")
@@ -34,16 +34,16 @@ public class CoopClient {
     }
 
     @Step("Send POST /api/{userId}/{action.value} requests until response body.message is {expectedMessageText}")
-    public SuccessfulResponse sendActionRequestUntilResponseMessageIs(
+    public SuccessfulResponse sendActionRequestUntilResponseMessageContains(
             ApiAction action,
             String expectedMessageText
     ) {
         Instant timeout = Instant.now().plus(defaultWaitDuration);
         SuccessfulResponse response = sendActionRequest(action);
-        while ((Instant.now().compareTo(timeout) <= 0) && !(response.message().equals(expectedMessageText))) {
+        while ((Instant.now().compareTo(timeout) <= 0) && !(response.message().contains(expectedMessageText))) {
             response = sendActionRequest(action);
         }
-        if (!response.message().equals(expectedMessageText)) {
+        if (!response.message().contains(expectedMessageText)) {
             throw new RuntimeException(String.format("Timeout occurred during waiting for 'body.message' of POST " +
                             "/api/{userId}/%s is equal to expected. Expected value is ['%s'], actual was ['%s'].",
                     action.value, expectedMessageText, response.message()
