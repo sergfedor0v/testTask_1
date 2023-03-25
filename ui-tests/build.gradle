@@ -28,7 +28,7 @@ configurations {
     testCompile
 }
 
-group 'org.example'
+group 'org.sergfedrv'
 version '1.0-SNAPSHOT'
 
 repositories {
