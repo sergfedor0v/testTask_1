@@ -1,4 +1,4 @@
-package org.sergfedrv.client.model;
+package org.sergfedrv.model;
 
 import com.google.gson.annotations.SerializedName;
 

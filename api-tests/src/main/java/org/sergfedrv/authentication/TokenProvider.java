@@ -1,4 +1,4 @@
-package org.sergfedrv.client.authentication;
+package org.sergfedrv.authentication;
 
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.filter.log.LogDetail;

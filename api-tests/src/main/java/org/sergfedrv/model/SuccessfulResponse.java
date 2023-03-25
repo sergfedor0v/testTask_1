@@ -1,9 +1,9 @@
-package org.sergfedrv.client.model;
+package org.sergfedrv.model;
 
 public record SuccessfulResponse(
         String action,
         boolean success,
         String message,
-        String data
+        Integer data
 ) {
 }

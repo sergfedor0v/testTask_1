@@ -1,6 +1,6 @@
 package org.sergfedrv.config;
 
-import org.sergfedrv.client.authentication.AppCredentials;
+import org.sergfedrv.authentication.AppCredentials;
 
 import java.util.Optional;
 
@@ -24,7 +24,7 @@ public class Configuration {
                 getProperty(String.format("%s.clientSecret", appScope)));
     }
 
-    public static String getUserId() {
+    public static String getDefaultUserId() {
         return getProperty("userId");
     }
 

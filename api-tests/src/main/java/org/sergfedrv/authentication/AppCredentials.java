@@ -1,4 +1,4 @@
-package org.sergfedrv.client.authentication;
+package org.sergfedrv.authentication;
 
 public record AppCredentials(
     String clientId,

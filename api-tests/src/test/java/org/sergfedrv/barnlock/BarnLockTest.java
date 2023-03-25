@@ -1,25 +1,38 @@
 package org.sergfedrv.barnlock;
 
-import io.qameta.allure.Step;
-import io.restassured.specification.RequestSpecification;
+import io.qameta.allure.Description;
 import org.junit.jupiter.api.Test;
 import org.sergfedrv.BaseTest;
-import org.sergfedrv.client.model.SuccessfulResponse;
-import org.sergfedrv.client.specifications.ApiAction;
-import org.sergfedrv.client.specifications.SpecificationProvider;
-import org.sergfedrv.config.Configuration;
+import org.sergfedrv.model.SuccessfulResponse;
+import org.sergfedrv.specifications.ApiAction;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class BarnLockTest extends BaseTest {
 
     @Test
+    @Description("""
+            Check that it's been a while since the last time we opened a barn, we got "You just unlocked your barn!
+             Watch out for strangers!" as a response message.
+            """)
     public void testBarnUnlockPositive() {
-        SuccessfulResponse as = executeRequest(SpecificationProvider.getRequestSpec(ApiAction.BARN_UNLOCK,
-                tokenProvider.getFullScopeAppToken()));
+        SuccessfulResponse expectedResponse = new SuccessfulResponse(ApiAction.BARN_UNLOCK.value, true,
+                "You just unlocked your barn! Watch out for strangers!", null);
+        SuccessfulResponse actualResponse = coopClient.sendActionRequestUntilResponseMessageIs(ApiAction.BARN_UNLOCK,
+                expectedResponse.message());
+        assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    @Step("Execute '{action.value}' request with valid request parameters and check response code")
-    public SuccessfulResponse executeRequest(RequestSpecification requestSpecification) {
-        return requestSpecification.post().then().log().all().statusCode(200)
-                .extract().as(SuccessfulResponse.class);
+    @Test
+    @Description("""
+            Check that when we open already opened barn, we got "The barn is already wide open! Let's throw a party!" as
+            a response message.
+            """)
+    public void testBarnUnlockAlreadyUnlocked() {
+        SuccessfulResponse expectedResponse = new SuccessfulResponse(ApiAction.BARN_UNLOCK.value, true,
+                "The barn is already wide open! Let's throw a party!", null);
+        SuccessfulResponse actualResponse = coopClient.sendActionRequestUntilResponseMessageIs(ApiAction.BARN_UNLOCK,
+                expectedResponse.message());
+        assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 }
