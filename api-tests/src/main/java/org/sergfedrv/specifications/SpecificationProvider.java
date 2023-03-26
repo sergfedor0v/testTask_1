@@ -16,11 +16,18 @@ public class SpecificationProvider {
                 .spec(getRequestLogSpec())
                 .baseUri(Configuration.getBaseUrl())
                 .basePath(String.format("api/%s/%s", userId, action.value))
-                .header("Authorization", "Bearer " + accessToken);
+                .header("Authorization", accessToken);
     }
 
     public RequestSpecification getRequestSpec(ApiAction action, String accessToken) {
         return getRequestSpec(action, Configuration.getDefaultUserId(), accessToken);
+    }
+
+    public RequestSpecification getRequestSpecWithoutAuthHeader(ApiAction action) {
+        return given()
+                .spec(getRequestLogSpec())
+                .baseUri(Configuration.getBaseUrl())
+                .basePath(String.format("api/%s/%s", Configuration.getDefaultUserId(), action.value));
     }
 
     private RequestSpecification getRequestLogSpec() {

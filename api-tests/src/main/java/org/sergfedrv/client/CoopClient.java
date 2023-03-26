@@ -1,9 +1,10 @@
 package org.sergfedrv.client;
 
 import io.qameta.allure.Step;
-import io.restassured.response.ValidatableResponse;
+import io.restassured.mapper.ObjectMapperType;
 import org.sergfedrv.authentication.TokenProvider;
-import org.sergfedrv.model.SuccessfulResponse;
+import org.sergfedrv.model.SuccessResponse;
+import org.sergfedrv.model.UnauthorizedErrorResponse;
 import org.sergfedrv.specifications.ApiAction;
 import org.sergfedrv.specifications.SpecificationProvider;
 
@@ -21,25 +22,36 @@ public class CoopClient {
         defaultWaitDuration = Duration.ofSeconds(30);
     }
 
-    @Step("Send POST /api/{userId}/{action.value} request.")
-    public ValidatableResponse postRequest(ApiAction action, String userId, String accessToken) {
-        return specificationProvider.getRequestSpec(action, userId, accessToken).post().then().log().body();
+    @Step("Send POST /api/{userId}/{action.value} request and check that response code is 401 Unauthorized.")
+    public UnauthorizedErrorResponse sendUnauthorizedActionRequest(
+            ApiAction action,
+            String userId,
+            String accessToken
+    ) {
+        return specificationProvider.getRequestSpec(action, userId, accessToken).post().then().log().body()
+                .statusCode(401).extract().as(UnauthorizedErrorResponse.class, ObjectMapperType.GSON);
     }
 
-    @Step("Send POST /api/{userId}/{action.value} request with valid parameters and check response is OK")
-    public SuccessfulResponse sendActionRequest(ApiAction action) {
+    @Step("Send POST /api/{userId}/{action.value} request and check that response code is 200 OK.")
+    public UnauthorizedErrorResponse sendActionRequestWithoutToken(ApiAction action) {
+        return specificationProvider.getRequestSpecWithoutAuthHeader(action).post().then().log().body()
+                .statusCode(200).extract().as(UnauthorizedErrorResponse.class, ObjectMapperType.GSON);
+    }
+
+    @Step("Send POST /api/{userId}/{action.value} request with valid parameters and check response is 200 OK.")
+    public SuccessResponse sendActionRequest(ApiAction action) {
         return specificationProvider.getRequestSpec(action, tokenProvider.getFullScopeAppToken())
                 .post().then().log().body().statusCode(200)
-                .extract().as(SuccessfulResponse.class);
+                .extract().as(SuccessResponse.class, ObjectMapperType.GSON);
     }
 
     @Step("Send POST /api/{userId}/{action.value} requests until response body.message is {expectedMessageText}")
-    public SuccessfulResponse sendActionRequestUntilResponseMessageContains(
+    public SuccessResponse sendActionRequestUntilResponseMessageContains(
             ApiAction action,
             String expectedMessageText
     ) {
         Instant timeout = Instant.now().plus(defaultWaitDuration);
-        SuccessfulResponse response = sendActionRequest(action);
+        SuccessResponse response = sendActionRequest(action);
         while ((Instant.now().compareTo(timeout) <= 0) && !(response.message().contains(expectedMessageText))) {
             response = sendActionRequest(action);
         }

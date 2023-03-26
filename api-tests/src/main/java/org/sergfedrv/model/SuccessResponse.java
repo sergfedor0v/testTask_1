@@ -1,6 +1,6 @@
 package org.sergfedrv.model;
 
-public record SuccessfulResponse(
+public record SuccessResponse(
         String action,
         boolean success,
         String message,

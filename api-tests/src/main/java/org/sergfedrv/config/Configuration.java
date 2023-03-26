@@ -28,6 +28,10 @@ public class Configuration {
         return getProperty("userId");
     }
 
+    public static String getAccessDeniedUser() {
+        return "1";
+    }
+
     public static boolean debugModeEnabled() {
         return Optional.ofNullable(System.getProperty("debugMode"))
                 .isPresent() && System.getProperty("debugMode").equals("enabled");

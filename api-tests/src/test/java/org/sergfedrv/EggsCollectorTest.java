@@ -4,8 +4,9 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Step;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.jupiter.api.*;
-import org.sergfedrv.model.SuccessfulResponse;
+import org.sergfedrv.model.SuccessResponse;
 import org.sergfedrv.specifications.ApiAction;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -23,11 +24,11 @@ public class EggsCollectorTest extends BaseTest {
             Then: client gets total collected eggs count = 'X+Y'
             """)
     public void eggsCollectorTest(){
-        SuccessfulResponse eggsCountBefore = coopClient.sendActionRequest(ApiAction.EGGS_COUNT);
+        SuccessResponse eggsCountBefore = coopClient.sendActionRequest(ApiAction.EGGS_COUNT);
         validateEggsCountResponse(eggsCountBefore);
-        SuccessfulResponse collectedEggsResponse = coopClient.sendActionRequestUntilResponseMessageContains(ApiAction.EGGS_COLLECT,
+        SuccessResponse collectedEggsResponse = coopClient.sendActionRequestUntilResponseMessageContains(ApiAction.EGGS_COLLECT,
                 "eggs have been collected!");
-        SuccessfulResponse eggsCountAfter = coopClient.sendActionRequest(ApiAction.EGGS_COUNT);
+        SuccessResponse eggsCountAfter = coopClient.sendActionRequest(ApiAction.EGGS_COUNT);
         assertThat(eggsCountAfter.data()).as("Check, that total amount of collected eggs has increased")
                 .isEqualTo(eggsCountBefore.data() + collectedEggsResponse.data());
         validateEggsCountResponse(eggsCountAfter);
@@ -37,15 +38,16 @@ public class EggsCollectorTest extends BaseTest {
     @Test
     @DisplayName("Check, that you can't collect eggs to often")
     @Order(2)
-    public void giveYourChickensABreakTest(){
-        SuccessfulResponse expectedResponse = new SuccessfulResponse(ApiAction.EGGS_COLLECT.value, true,
+    public void giveYourChickensABreakTest() {
+        SuccessResponse expectedResponse = new SuccessResponse(ApiAction.EGGS_COLLECT.value, true,
                 "Hey, give the ladies a break. Makin' eggs ain't easy!", null);
-        SuccessfulResponse actualResponse = coopClient.sendActionRequestUntilResponseMessageContains(ApiAction.EGGS_COLLECT,
+        SuccessResponse actualResponse = coopClient.sendActionRequestUntilResponseMessageContains(ApiAction.EGGS_COLLECT,
                 "Hey, give the ladies a break. Makin' eggs ain't easy!");
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
     @Step("Validate response of /eggs-count request")
-    public void validateEggsCountResponse(SuccessfulResponse response) {
+    public void validateEggsCountResponse(SuccessResponse response) {
         try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
             softAssertions.assertThat(response.action()).as("Check response action").isEqualTo("eggs-count");
             softAssertions.assertThat(response.success()).as("Check response success state").isTrue();
@@ -56,7 +58,7 @@ public class EggsCollectorTest extends BaseTest {
     }
 
     @Step("Validate response of /eggs-collect request")
-    public void validateEggsCollectResponse(SuccessfulResponse response) {
+    public void validateEggsCollectResponse(SuccessResponse response) {
         try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
             softAssertions.assertThat(response.action()).as("Check response action").isEqualTo("eggs-collect");
             softAssertions.assertThat(response.success()).as("Check response success state").isTrue();

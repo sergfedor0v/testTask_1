@@ -35,14 +35,12 @@ public class TokenProvider {
     }
 
     public String getInvalidToken() {
-        return "invalidToken";
+        return "Bearer invalidToken";
     }
 
     private String authenticateApp(Scope scope) {
         AppCredentials appCredentials = Configuration.getAppCredentials(scope.getValue());
-        return given()
-                .spec(getRequestLoggerSpec())
-                .baseUri(Configuration.getBaseUrl())
+        String tokenString = given().spec(getRequestLoggerSpec()).baseUri(Configuration.getBaseUrl())
                 .basePath("token")
                 .formParam("grant_type", "client_credentials")
                 .formParam("client_id", appCredentials.clientId())
@@ -54,6 +52,7 @@ public class TokenProvider {
                 .extract()
                 .jsonPath()
                 .getString("access_token");
+        return String.format(("Bearer %s"), tokenString);
     }
 
     private RequestSpecification getRequestLoggerSpec() {
