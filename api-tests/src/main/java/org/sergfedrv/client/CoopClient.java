@@ -28,24 +28,24 @@ public class CoopClient {
             String userId,
             String accessToken
     ) {
-        return specificationProvider.getRequestSpec(action, userId, accessToken).post().then().log().body()
+        return specificationProvider.getRequestSpec(action, userId, accessToken).post().then().log().all()
                 .statusCode(401).extract().as(UnauthorizedErrorResponse.class, ObjectMapperType.GSON);
     }
 
     @Step("Send POST /api/{userId}/{action.value} request and check that response code is 200 OK.")
     public UnauthorizedErrorResponse sendActionRequestWithoutToken(ApiAction action) {
-        return specificationProvider.getRequestSpecWithoutAuthHeader(action).post().then().log().body()
+        return specificationProvider.getRequestSpecWithoutAuthHeader(action).post().then().log().all()
                 .statusCode(200).extract().as(UnauthorizedErrorResponse.class, ObjectMapperType.GSON);
     }
 
     @Step("Send POST /api/{userId}/{action.value} request with valid parameters and check response is 200 OK.")
     public SuccessResponse sendActionRequest(ApiAction action) {
         return specificationProvider.getRequestSpec(action, tokenProvider.getFullScopeAppToken())
-                .post().then().log().body().statusCode(200)
+                .post().then().log().all().statusCode(200)
                 .extract().as(SuccessResponse.class, ObjectMapperType.GSON);
     }
 
-    @Step("Send POST /api/{userId}/{action.value} requests until response body.message is {expectedMessageText}")
+    @Step("Keep sending POST /{action.value} requests until response body.message does not contain \"{expectedMessageText}\"")
     public SuccessResponse sendActionRequestUntilResponseMessageContains(
             ApiAction action,
             String expectedMessageText

@@ -1,7 +1,10 @@
 package org.sergfedrv;
 
+import io.qameta.allure.Epic;
 import io.qameta.allure.Step;
+import io.qameta.allure.Story;
 import org.assertj.core.api.AutoCloseableSoftAssertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -12,7 +15,8 @@ import org.sergfedrv.specifications.ApiAction;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class NegativeTest extends BaseTest {
+@Epic("Authentication errors tests")
+public class AuthErrorsTest extends BaseTest {
 
     private static Stream<Arguments> apiActionsDataProvider() {
         return Stream.of(
@@ -26,6 +30,8 @@ public class NegativeTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("apiActionsDataProvider")
+    @DisplayName("Send action request with token that does not have rights to perform this action")
+    @Story("Send action request with token that does not have rights to perform this action")
     public void insufficientScopeResponseTest(ApiAction action) {
         UnauthorizedErrorResponse response = coopClient.sendUnauthorizedActionRequest(action,
                 Configuration.getDefaultUserId(), tokenProvider.getEmptyScopeAppToken());
@@ -35,6 +41,8 @@ public class NegativeTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("apiActionsDataProvider")
+    @DisplayName("Send action request with invalid token")
+    @Story("Send action request with invalid token")
     public void invalidTokenResponseTest(ApiAction action) {
         UnauthorizedErrorResponse response = coopClient.sendUnauthorizedActionRequest(action,
                 Configuration.getDefaultUserId(), tokenProvider.getInvalidToken());
@@ -44,6 +52,8 @@ public class NegativeTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("apiActionsDataProvider")
+    @DisplayName("Send action request on behalf of the user who did not give permissions")
+    @Story("Send action request on behalf of the user who did not give permissions")
     public void noAccessOnBehalfOfThisUserTest(ApiAction action) {
         UnauthorizedErrorResponse response = coopClient.sendUnauthorizedActionRequest(action,
                 Configuration.getAccessDeniedUser(), tokenProvider.getFullScopeAppToken());
@@ -53,15 +63,19 @@ public class NegativeTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("apiActionsDataProvider")
+    @DisplayName("Send action request with malformed token value")
+    @Story("Send action request with malformed token value")
     public void malformedAuthHeaderTest(ApiAction action) {
         UnauthorizedErrorResponse response = coopClient.sendUnauthorizedActionRequest(action,
-                Configuration.getAccessDeniedUser(), "BEAR IDK WHAT TOKEN");
+                Configuration.getAccessDeniedUser(), tokenProvider.getMalformedToken());
         validateErrorResponse(response, "invalid_request",
                 "Malformed auth header");
     }
 
     @ParameterizedTest
     @MethodSource("apiActionsDataProvider")
+    @DisplayName("Send action without auth header")
+    @Story("Send action without auth header")
     public void noAuthHeaderTest(ApiAction action) {
         UnauthorizedErrorResponse response = coopClient.sendActionRequestWithoutToken(action);
         validateErrorResponse(response, "access_denied",

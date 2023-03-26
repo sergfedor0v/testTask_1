@@ -1,6 +1,7 @@
 package org.sergfedrv;
 
 import io.qameta.allure.Allure;
+import io.qameta.allure.Epic;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Epic("Simple COOP actions tests (barn-unlock, chicken-feed, toiletseet-down)")
 public class CoopSimpleActionsTest extends BaseTest {
 
     private static Stream<Arguments> stateChangedDataProvider() {

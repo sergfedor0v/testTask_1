@@ -38,6 +38,10 @@ public class TokenProvider {
         return "Bearer invalidToken";
     }
 
+    public String getMalformedToken() {
+        return "BEAR WITH ME";
+    }
+
     private String authenticateApp(Scope scope) {
         AppCredentials appCredentials = Configuration.getAppCredentials(scope.getValue());
         String tokenString = given().spec(getRequestLoggerSpec()).baseUri(Configuration.getBaseUrl())
