@@ -20,7 +20,7 @@ public class BasePage {
         wait = new WebDriverWait(driver, WAIT_DURATION);
     }
 
-    protected void takeScreenshot(String description) {
+    public void takeScreenshot(String description) {
         TakesScreenshot screenshot = (TakesScreenshot) driver;
         Allure.addAttachment(description,
                 new ByteArrayInputStream(screenshot.getScreenshotAs(OutputType.BYTES)));

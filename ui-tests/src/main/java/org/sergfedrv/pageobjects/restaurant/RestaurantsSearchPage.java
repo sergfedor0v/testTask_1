@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RestaurantsSearchPage extends BasePage {
+
+    private final By headerLocator = By.cssSelector("header[data-qa='header']");
     private final By openedRestaurantsCardsLocator = By.cssSelector("section[data-qa='restaurant-list-open-section'] " +
             "ul>li");
     private final By openingSoonRestaurantCardsLocator = By.cssSelector("section[data-qa='restaurant-list-pre-order-" +
@@ -26,9 +28,6 @@ public class RestaurantsSearchPage extends BasePage {
     private final By minimalOrderFilterShowFifteenOrLessLocator = By.id("radio_2");
     private final By openedNowSwitcherLocator = By.cssSelector("div[data-qa='availability-filter-switch']");
     private final By freeDeliveryFilterSwitchLocator = By.cssSelector("div[data-qa='free-delivery-filter-switch']");
-    private final By restaurantListSearchInputLocator = By.id("input_5");
-    private final By restaurantSearchResultLink = By.cssSelector("div[data-qa='restaurant-search-results']" +
-            " ul>li a");
     private final By cuisineCategorySwiperOptionsLocator = By.cssSelector("ul.swiper-wrapper>li div._3wa4B");
 
     private final By footerLocator = By.cssSelector("footer[data-qa='footer']");
@@ -67,15 +66,23 @@ public class RestaurantsSearchPage extends BasePage {
     public RestaurantsSearchPage scrollAllTheWayDown() {
         while (driver.findElements(footerLocator).isEmpty()) {
             new Actions(driver)
-                    .scrollByAmount(0, 1500)
+                    .scrollByAmount(0, 15000)
                     .perform();
         }
         return new RestaurantsSearchPage(driver);
     }
 
-    @Step("Filter restaurants list by query '{searchQuery}'")
-    public RestaurantsSearchPage filterRestaurantsByQuery(String searchQuery) {
-        waitVisibilityOfElementBy(restaurantListSearchInputLocator).sendKeys(searchQuery);
+    @Step("Scroll restaurants list all the way up and take screenshot")
+    public RestaurantsSearchPage scrollAllTheWayUpTakeScreenshot() {
+        new Actions(driver).scrollToElement(waitVisibilityOfElementBy(headerLocator)).perform();
+        takeScreenshot("Screenshot of the restaurant list top");
+        return new RestaurantsSearchPage(driver);
+    }
+
+    @Step("Scroll restaurants page all the way down and take screenshot")
+    public RestaurantsSearchPage scrollAllTheWayDownTakeScreenshot() {
+        scrollAllTheWayDown();
+        takeScreenshot("Screenshot of the restaurant list bottom");
         return new RestaurantsSearchPage(driver);
     }
 
@@ -102,19 +109,12 @@ public class RestaurantsSearchPage extends BasePage {
         return new RestaurantsSearchPage(driver);
     }
 
-    public List<RestaurantSearchResultCard> getRestaurantSearchCardElements() {
-        List<WebElement> restaurantCards = getElementsBy(restaurantSearchResultLink);
-        return restaurantCards.stream().map(card -> new RestaurantSearchResultCard(driver, card))
-                .collect(Collectors.toList());
-    }
-
     public List<RestaurantCard> getAllRestaurantCardElements() {
-        List<WebElement> elements = new ArrayList<>();
-        elements.addAll(getElementsBy(openedRestaurantsCardsLocator));
-        elements.addAll(getElementsBy(openingSoonRestaurantCardsLocator));
-        elements.addAll(getElementsBy(closedRestaurantCardsLocator));
-        return elements.stream().map(element -> new RestaurantCard(driver, element))
-                .collect(Collectors.toList());
+        List<RestaurantCard> cards = new ArrayList<>();
+        cards.addAll(getOpenedRestaurantCardElements());
+        cards.addAll(getOpeningSoonRestaurantCardElements());
+        cards.addAll(getClosedRestaurantCardElements());
+        return cards;
     }
 
     public List<RestaurantCard> getOpenedRestaurantCardElements() {

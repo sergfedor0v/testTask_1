@@ -15,7 +15,8 @@ public class ApiHelper {
 
     public Restaurants getRestaurantInfoForLocation(String locationPostalCode) {
         Response response = given().baseUri(baseUrl)
-                .log().all()
+                .log()
+                .all()
                 .basePath("restaurants")
                 .queryParam("postalCode", locationPostalCode)
                 .header("X-Country-Code", "de")

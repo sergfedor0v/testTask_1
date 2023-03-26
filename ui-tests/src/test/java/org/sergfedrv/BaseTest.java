@@ -5,17 +5,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.WebDriver;
 import org.sergfedrv.driver.WebDriverProvider;
 import org.sergfedrv.utils.ApiHelper;
+import org.sergfedrv.utils.RestaurantDataProvider;
 
 public class BaseTest {
     protected WebDriver driver;
     protected ApiHelper apiHelper;
-    protected String baseUrl;
+    protected RestaurantDataProvider restaurantDataProvider;
 
     @BeforeEach
     public void setDriver() {
         apiHelper = new ApiHelper(Configuration.getBaseApiUrl());
+        restaurantDataProvider = RestaurantDataProvider.getInstance(apiHelper);
         driver = WebDriverProvider.getWebDriver();
-        baseUrl = Configuration.getBaseUrl();
     }
 
     @AfterEach

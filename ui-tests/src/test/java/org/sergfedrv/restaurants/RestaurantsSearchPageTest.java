@@ -3,6 +3,7 @@ package org.sergfedrv.restaurants;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Description;
 import io.qameta.allure.Step;
+import org.assertj.core.api.AutoCloseableSoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,8 +14,7 @@ import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.logging.LogType;
 import org.sergfedrv.BaseTest;
 import org.sergfedrv.Configuration;
-import org.sergfedrv.data.cuisine.CuisineTypeMapper;
-import org.sergfedrv.data.restaurant.RestaurantData;
+import org.sergfedrv.data.cuisine.CountryCode;
 import org.sergfedrv.pageobjects.home.HomePage;
 import org.sergfedrv.pageobjects.restaurant.RestaurantCard;
 import org.sergfedrv.pageobjects.restaurant.RestaurantsSearchPage;
@@ -41,10 +41,6 @@ public class RestaurantsSearchPageTest extends BaseTest {
             Then: Restaurants list is filtered by this category.
             """)
     public void testSearchByCuisineType() {
-        //Arrange - get actual restaurant cuisine type data from backend
-        List<RestaurantData> actualRestaurantsData = loadActualRestaurantDataForLocation(Configuration
-                .getSearchPostalCode());
-        //Act
         driver.get(Configuration.getRestaurantListDirectUrl());
         String cuisineTypeName = "Italian";
         RestaurantsSearchPage page = new RestaurantsSearchPage(driver)
@@ -52,7 +48,7 @@ public class RestaurantsSearchPageTest extends BaseTest {
                 .filterByCuisineTopSwiper(cuisineTypeName)
                 .scrollAllTheWayDown();
         //Assert
-        checkCuisineCategoryOfRestaurantsFilteredByCategory(page, cuisineTypeName, actualRestaurantsData);
+        checkRestaurantsFilteredByCuisineCategory(page, cuisineTypeName);
     }
 
     @ParameterizedTest
@@ -69,7 +65,7 @@ public class RestaurantsSearchPageTest extends BaseTest {
                 .waitRestaurantListLoading()
                 .applyMinimalOrderFilter(minimalOrderValue)
                 .scrollAllTheWayDown();
-        checkAllRestaurantsFilteredByMinimalOrderAmount(restaurantsSearchPage, minimalOrderValue);
+        checkFilteringByMinimalOrderAmount(restaurantsSearchPage, minimalOrderValue);
     }
 
     @Test
@@ -85,7 +81,7 @@ public class RestaurantsSearchPageTest extends BaseTest {
                 .waitRestaurantListLoading()
                 .applyFreeDeliveryFilter()
                 .scrollAllTheWayDown();
-        checkAllRestaurantsFilteredByFreeDelivery(page);
+        checkFilteringByFreeDelivery(page);
     }
 
     @Test
@@ -101,7 +97,7 @@ public class RestaurantsSearchPageTest extends BaseTest {
                 .waitRestaurantListLoading()
                 .applyOpenNowFilter()
                 .scrollAllTheWayDown();
-        checkAllRestaurantsFilteredByOpenNow(page);
+        checkFilteringByOpenNow(page);
     }
 
     @Test
@@ -114,75 +110,101 @@ public class RestaurantsSearchPageTest extends BaseTest {
             Then: Opens page with the restaurant list for this location.
             """)
     public void cloudflareErrorsDemo() {
-        driver.get(baseUrl);
+        driver.get(Configuration.getBaseUrl());
         new HomePage(driver)
                 .inputSearchQuery("Unter den Linden")
                 .selectLocationResult(0);
         new RestaurantsSearchPage(driver).waitRestaurantListLoading();
     }
 
-    @Step("Check that all restaurant cards from discovery filtered by cuisine category='{categoryName}' have this cuisine category")
-    public void checkCuisineCategoryOfRestaurantsFilteredByCategory(
+    @Step("Check that all restaurants are filtered by cuisine category='{categoryName}'")
+    public void checkRestaurantsFilteredByCuisineCategory(
             RestaurantsSearchPage page,
-            String categoryName,
-            List<RestaurantData> actualRestaurantsData
+            String categoryName
     ) {
         List<RestaurantCard> restaurantCards = page.getAllRestaurantCardElements();
-        CuisineTypeMapper cuisineTypeMapper = new CuisineTypeMapper();
-        for (RestaurantCard card : restaurantCards) {
-            List<String> actualRestaurantCuisineCategoryCodes = getRestaurantDataByNameSlug(actualRestaurantsData,
-                    card.getRestaurantPrimarySlug()).cuisineTypeCodes();
-            List<String> actualRestaurantCuisineTypeNames = cuisineTypeMapper
-                    .getTypeNamesForCodes(actualRestaurantCuisineCategoryCodes);
-            //catch card that does not match with filter and scroll to it to take a screenshot
-            if (!actualRestaurantCuisineTypeNames.contains(categoryName)) {
-                card.scrollBrowserWindowToTheCardAndTakeScreenshot();
+        try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
+            for (RestaurantCard card : restaurantCards) {
+                List<String> restaurantAvailableCuisines = restaurantDataProvider
+                        .getRestaurantCuisineTypeNames(card.getRestaurantPrimarySlug(), CountryCode.EN);
+                softAssertions.assertThat(restaurantAvailableCuisines)
+                        .as(String.format("Check, that restaurant %s really can cook %s food",
+                                card.getRestaurantTitle(), categoryName))
+                        .contains(categoryName);
             }
-            assertThat(actualRestaurantCuisineTypeNames)
-                    .as(String.format("Check, that restaurant %s really can cook %s food",
-                            card.getRestaurantTitle(), categoryName))
-                    .contains(categoryName);
+            page.scrollAllTheWayUpTakeScreenshot();
         }
     }
 
-    @Step("Check, that all opened and opening soon restaurants were filtered by minimal order amount = {minimalAmount}")
-    private void checkAllRestaurantsFilteredByMinimalOrderAmount(
-            RestaurantsSearchPage page,
-            float minimalAmount
-    ) {
-        List<RestaurantCard> restaurantCards = new ArrayList<>();
-        restaurantCards.addAll(page.getOpenedRestaurantCardElements());
-        restaurantCards.addAll(page.getOpeningSoonRestaurantCardElements());
-        for (RestaurantCard card : restaurantCards) {
-            //catch card that does not match with filter and scroll to it to take a screenshot
-            if (!(card.getMinimalOrderAmount() <= minimalAmount)) {
-                card.scrollBrowserWindowToTheCardAndTakeScreenshot();
+    @Step("Check that all restaurants were filtered by minimal order amount = {minimalAmount}")
+    private void checkFilteringByMinimalOrderAmount(RestaurantsSearchPage page, float minimalAmount) {
+        List<RestaurantCard> openedAndOpeningSoonRestaurants = new ArrayList<>();
+        openedAndOpeningSoonRestaurants.addAll(page.getOpenedRestaurantCardElements());
+        openedAndOpeningSoonRestaurants.addAll(page.getOpeningSoonRestaurantCardElements());
+        try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
+            for (RestaurantCard card : openedAndOpeningSoonRestaurants) {
+                softAssertions.assertThat(card.getMinimalOrderAmount())
+                        .as(String.format("Check, that restaurant %s minimal order amount is less than %f",
+                                card.getRestaurantTitle(), minimalAmount))
+                        .isLessThanOrEqualTo(minimalAmount);
             }
-            assertThat(card.getMinimalOrderAmount())
-                    .as(String.format("Check, that restaurant %s minimal order amount is less than %f",
-                            card.getRestaurantTitle(), minimalAmount))
-                    .isLessThanOrEqualTo(minimalAmount);
+            page.scrollAllTheWayUpTakeScreenshot();
+        }
+        if (!page.getClosedRestaurantCardElements().isEmpty()) {
+           checkClosedRestaurantsFilteringByMinimalOrderAmount(page, minimalAmount);
+        }
+    }
+    @Step("Check that restaurants closed for delivery filtered by minimal order amount")
+    private void checkClosedRestaurantsFilteringByMinimalOrderAmount(RestaurantsSearchPage page, float minimalAmount) {
+        List<RestaurantCard> cards = page.getClosedRestaurantCardElements();
+        try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
+            for (RestaurantCard card : cards) {
+                float restaurantMinimalOrderAmount = restaurantDataProvider
+                        .getRestaurantMinimalOrderAmount(card.getRestaurantPrimarySlug());
+                softAssertions.assertThat(restaurantMinimalOrderAmount)
+                        .as(String.format("Check, that restaurant %s minimal order amount is less than %f",
+                                card.getRestaurantTitle(), minimalAmount))
+                        .isLessThanOrEqualTo(minimalAmount);
+            }
+            page.scrollAllTheWayDownTakeScreenshot();
         }
     }
 
-    @Step("Check, that all opened and opening soon restaurants were filtered by free delivery")
-    private void checkAllRestaurantsFilteredByFreeDelivery(RestaurantsSearchPage page) {
-        List<RestaurantCard> restaurantCards = new ArrayList<>();
-        restaurantCards.addAll(page.getOpenedRestaurantCardElements());
-        restaurantCards.addAll(page.getOpeningSoonRestaurantCardElements());
-        for (RestaurantCard card : restaurantCards) {
-            //catch card that does not match with filter and scroll to it to take a screenshot
-            if (!card.isFreeDeliveryAvailable()) {
-                card.scrollBrowserWindowToTheCardAndTakeScreenshot();
+    @Step("Check, that all restaurants were filtered by free delivery")
+    private void checkFilteringByFreeDelivery(RestaurantsSearchPage page) {
+        List<RestaurantCard> openedAndOpeningSoonRestaurants = new ArrayList<>();
+        openedAndOpeningSoonRestaurants.addAll(page.getOpenedRestaurantCardElements());
+        openedAndOpeningSoonRestaurants.addAll(page.getOpeningSoonRestaurantCardElements());
+        try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
+            for (RestaurantCard card : openedAndOpeningSoonRestaurants) {
+                softAssertions.assertThat(card.isFreeDeliveryIndicatorAvailable())
+                        .as(String.format("Check, that restaurant %s offers free delivery", card.getRestaurantTitle()))
+                        .isTrue();
             }
-            assertThat(card.isFreeDeliveryAvailable())
-                    .as(String.format("Check, that restaurant %s offers free delivery", card.getRestaurantTitle()))
-                    .isTrue();
+            page.scrollAllTheWayUpTakeScreenshot();
+        }
+        if (!page.getClosedRestaurantCardElements().isEmpty()) {
+            checkClosedRestaurantsFilteringByFreeDelivery(page);
         }
     }
 
-    @Step("Check, that only opened restaurants are available")
-    private void checkAllRestaurantsFilteredByOpenNow(RestaurantsSearchPage page) {
+    @Step("Check that restaurants closed for delivery filtered by free delivery availability")
+    private void checkClosedRestaurantsFilteringByFreeDelivery(RestaurantsSearchPage page) {
+        List<RestaurantCard> cards = page.getClosedRestaurantCardElements();
+        try (AutoCloseableSoftAssertions softAssertions = new AutoCloseableSoftAssertions()) {
+            for (RestaurantCard card : cards) {
+                float restaurantDeliveryFee = restaurantDataProvider
+                        .getRestaurantDeliveryFee(card.getRestaurantPrimarySlug());
+                softAssertions.assertThat(restaurantDeliveryFee)
+                        .as(String.format("Check, that restaurant %s offers free delivery", card.getRestaurantTitle()))
+                        .isEqualTo(0);
+            }
+            page.scrollAllTheWayDownTakeScreenshot();
+        }
+    }
+
+    @Step("Check, that only opened restaurants are displayed")
+    private void checkFilteringByOpenNow(RestaurantsSearchPage page) {
         List<RestaurantCard> openedRestaurantCards = page.getOpenedRestaurantCardElements();
         List<RestaurantCard> openingSoonRestaurantCards = page.getOpeningSoonRestaurantCardElements();
         List<RestaurantCard> closedRestaurantCards = page.getClosedRestaurantCardElements();
@@ -192,17 +214,6 @@ public class RestaurantsSearchPageTest extends BaseTest {
                 .isEmpty();
         assertThat(closedRestaurantCards).as("Check that closed restaurants are not displayed")
                 .isEmpty();
-    }
-
-    @Step("Load actual restaurant data from backend for postal code {postalCode}")
-    private List<RestaurantData> loadActualRestaurantDataForLocation(String postalCode) {
-        return apiHelper.getRestaurantInfoForLocation(postalCode).getRestaurantDataList();
-    }
-
-    private RestaurantData getRestaurantDataByNameSlug(List<RestaurantData> data, String nameSlug) {
-        return data.stream().filter(r -> r.primarySlug().equals(nameSlug)).findFirst()
-                .orElseThrow(() -> new RuntimeException("Cannot find a restaurant from preloaded data by primary slug "
-                        + nameSlug));
     }
 
     @Step("Browser console logs")
